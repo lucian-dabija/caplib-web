@@ -1,0 +1,83 @@
+{
+    "name": "caplib-web",
+    "version": "0.1.0",
+    "author": "ZEROCAT",
+    "license": "BSD-3-Clause",
+    "description": "Credentialless Authentication Protocol Library for Web Applications",
+    "main": "dist/index.js",
+    "module": "dist/index.mjs",
+    "types": "./dist/index.d.ts",
+    "scripts": {
+        "build": "tsup",
+        "dev": "tsup --watch",
+        "clean": "rimraf ./dist",
+        "typecheck": "tsc --noEmit",
+        "build:full": "npm run clean && npm run build",
+        "prepublishOnly": "npm run build:full",
+        "postinstall": "node scripts/postinstall.js"
+    },
+    "files": [
+        "dist",
+        "scripts",
+        "README.md",
+        "LICENSE"
+    ],
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.mjs",
+            "require": "./dist/index.js"
+        },
+        "./react": {
+            "types": "./dist/react/index.d.ts",
+            "import": "./dist/react/index.mjs",
+            "require": "./dist/react/index.js"
+        },
+        "./server": {
+            "types": "./dist/server/index.d.ts",
+            "import": "./dist/server/index.mjs",
+            "require": "./dist/server/index.js"
+        },
+        "./vue": {
+            "types": "./dist/vue/index.d.ts",
+            "import": "./dist/vue/index.mjs",
+            "require": "./dist/vue/index.js"
+        }
+    },
+    "keywords": [
+        "authentication",
+        "wallet",
+        "blockchain",
+        "react",
+        "nextjs",
+        "vuejs",
+        "credentialless",
+        "caplib"
+    ],
+    "peerDependencies": {
+        "framer-motion": "^10.0.0 || ^11.0.0",
+        "next": "^13.0.0 || ^14.0.0",
+        "react": "^18.0.0",
+        "react-dom": "^18.0.0",
+        "vue": "^3.0.0",
+        "qrcode.react": "^3.0.0 || ^4.0.0"
+    },
+    "dependencies": {
+        "clsx": "^2.1.1",
+        "fs": "0.0.1-security",
+        "crypto-js": "^4.2.0",
+        "tailwind-merge": "^2.5.4"
+    },
+    "devDependencies": {
+        "@types/node": "^20.10.0",
+        "@types/react": "^18.2.0",
+        "@types/react-dom": "^18.2.0",
+        "@types/crypto-js": "^4.2.1",
+        "rimraf": "^5.0.0",
+        "tsup": "^8.0.0",
+        "typescript": "^5.0.0"
+    },
+    "engines": {
+        "node": ">=16.0.0"
+    }
+}
