@@ -1,0 +1,7 @@
+
+# Database files
+*.json
+*.encrypted.json
+
+# Keep .gitkeep
+!.gitkeep

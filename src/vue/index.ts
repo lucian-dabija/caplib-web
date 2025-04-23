@@ -1,5 +1,5 @@
-import VueCapAuth from './components/CapAuth.vue';
+import CapAuth from './components/CapAuth';
 
 export {
-    VueCapAuth
+    CapAuth as VueCapAuth
 };

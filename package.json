@@ -1,6 +1,6 @@
 {
-    "name": "caplib-web",
-    "version": "0.1.0",
+    "name": "caplib",
+    "version": "0.1.1",
     "author": "ZEROCAT",
     "license": "BSD-3-Clause",
     "description": "Credentialless Authentication Protocol Library for Web Applications",
@@ -56,23 +56,24 @@
     ],
     "peerDependencies": {
         "framer-motion": "^10.0.0 || ^11.0.0",
-        "next": "^13.0.0 || ^14.0.0",
-        "react": "^18.0.0",
-        "react-dom": "^18.0.0",
-        "vue": "^3.0.0",
-        "qrcode.react": "^3.0.0 || ^4.0.0"
+        "next": "^13.0.0 || ^14.0.0 || ^15.0.0",
+        "qrcode.react": "^3.0.0 || ^4.0.0",
+        "react": "^18.0.0 || ^19.0.0",
+        "react-dom": "^18.0.0 || ^19.0.0",
+        "vue": "^3.0.0"
     },
     "dependencies": {
         "clsx": "^2.1.1",
-        "fs": "0.0.1-security",
         "crypto-js": "^4.2.0",
+        "fs": "0.0.1-security",
         "tailwind-merge": "^2.5.4"
     },
     "devDependencies": {
-        "@types/node": "^20.10.0",
-        "@types/react": "^18.2.0",
-        "@types/react-dom": "^18.2.0",
         "@types/crypto-js": "^4.2.1",
+        "@types/node": "^20.10.0",
+        "@types/react": "^18.3.20",
+        "@types/react-dom": "^18.2.0",
+        "@types/vue": "^1.0.31",
         "rimraf": "^5.0.0",
         "tsup": "^8.0.0",
         "typescript": "^5.0.0"

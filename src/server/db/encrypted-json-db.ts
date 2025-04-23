@@ -127,6 +127,7 @@ export class EncryptedJSONDatabase implements DatabaseInterface {
         const newUser: User = {
             ...userData,
             role: userData.role || 'User',
+            account_type: userData.account_type || 'human',
             created_at: now
         };
 

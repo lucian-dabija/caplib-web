@@ -118,6 +118,14 @@ export const Option = React.forwardRef<
 ));
 Option.displayName = "Option";
 
+interface TabProps {
+    id: string;
+    children: React.ReactNode;
+    active?: boolean;
+    onClick?: () => void;
+    className?: string;
+}
+
 export const Tabs = ({ children, defaultTab, onChange }: {
     children: React.ReactNode,
     defaultTab?: string,
@@ -136,12 +144,13 @@ export const Tabs = ({ children, defaultTab, onChange }: {
     const childrenWithProps = React.Children.map(children, child => {
         if (React.isValidElement(child)) {
             if (child.type === TabsHeader) {
-                return React.cloneElement(child, {
+                return React.cloneElement(child as React.ReactElement<{ children: React.ReactNode }>, {
                     children: React.Children.map(child.props.children, tab => {
                         if (React.isValidElement(tab) && tab.type === Tab) {
-                            return React.cloneElement(tab, {
-                                active: tab.props.id === activeTab,
-                                onClick: () => handleTabClick(tab.props.id)
+                            const tabProps = tab.props as TabProps;
+                            return React.cloneElement(tab as React.ReactElement<TabProps>, {
+                                active: tabProps.id === activeTab,
+                                onClick: () => handleTabClick(tabProps.id)
                             });
                         }
                         return tab;
@@ -149,8 +158,8 @@ export const Tabs = ({ children, defaultTab, onChange }: {
                 });
             }
             if (child.type === TabsContent) {
-                return React.cloneElement(child, {
-                    children: React.Children.map(child.props.children, panel => {
+                return React.cloneElement(child as React.ReactElement<{ children: React.ReactNode }>, {
+                    children: React.Children.map(child.props.children, (panel: React.ReactElement<TabPanelProps>) => {
                         if (React.isValidElement(panel) && panel.type === TabPanel) {
                             return React.cloneElement(panel, {
                                 active: panel.props.id === activeTab
@@ -216,17 +225,19 @@ export const TabsContent = ({ children, className }: { children: React.ReactNode
 };
 TabsContent.displayName = "TabsContent";
 
+export interface TabPanelProps {
+    id: string,
+    children: React.ReactNode,
+    active?: boolean,
+    className?: string
+}
+
 export const TabPanel = ({
     id,
     children,
     active,
     className
-}: {
-    id: string,
-    children: React.ReactNode,
-    active?: boolean,
-    className?: string
-}) => {
+}: TabPanelProps) => {
     if (!active) return null;
     return (
         <div className={cn("", className)}>
