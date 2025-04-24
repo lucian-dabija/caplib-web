@@ -15,6 +15,7 @@ export function CapAuth({
 }: CapAuthProps) {
     const [stage, setStage] = useState<'intro' | 'qr' | 'polling' | 'onboarding'>('intro');
     const [qrData, setQrData] = useState<string | null>(null);
+    const [qrUri, setQrUri] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [nonce, setNonce] = useState<string | null>(null);
     const [walletAddress, setWalletAddress] = useState<string | null>(null);
@@ -89,11 +90,18 @@ export function CapAuth({
             }
 
             const receiverAddr = process.env.NEXT_PUBLIC_SERVER_WALLET_ADDRESS || '';
-            const txDetails = `smart_contract_auth_${process.env.NEXT_PUBLIC_AUTH_CONTRACT_ID},nonce_${data.nonce}`;
+            const contractId = process.env.NEXT_PUBLIC_AUTH_CONTRACT_ID || '';
+            const tokenId = process.env.NEXT_PUBLIC_TOKEN_ID || '';
+            
+            // Make sure to include the AUTH_CONTRACT_ID from env
+            const txDetails = `smart_contract_auth_${contractId},nonce_${data.nonce}`;
 
-            const qrData = `amount=0,recipientAddress=${receiverAddr},senderAddress=customer_,timestamp=${new Date().toISOString()},tokenId=${process.env.NEXT_PUBLIC_TOKEN_ID},transactionCost=0,transactionDetails=${txDetails},transactionId=transaction_`;
-
-            setQrData(qrData);
+            // Format the transaction parameters correctly
+            const txParams = `amount=0,recipientAddress=${receiverAddr},senderAddress=customer_,timestamp=${new Date().toISOString()},tokenId=${tokenId},transactionCost=0,transactionDetails=${txDetails},transactionId=transaction_`;
+            
+            // Set both the data for QR and the URI for deep linking
+            setQrData(txParams);
+            setQrUri(`zerowallet://transaction?${txParams}`);
             setNonce(data.nonce);
             setStage('qr');
         } catch (error) {
@@ -106,9 +114,9 @@ export function CapAuth({
     };
 
     const handleOpenMobileWallet = () => {
-        const walletScheme = config.mobileWalletScheme || 'capwallet://';
-        if (config.enableMobileWallet && qrData) {
-            window.location.href = `${walletScheme}authenticate?${encodeURIComponent(qrData)}`;
+        if (config.enableMobileWallet && qrUri) {
+            // Use the properly formatted URI
+            window.location.href = qrUri;
         }
     };
 
@@ -116,6 +124,7 @@ export function CapAuth({
         cleanupTimers();
         setError(null);
         setQrData(null);
+        setQrUri(null);
         setNonce(null);
         setWalletAddress(null);
         setStage('intro');
@@ -171,7 +180,7 @@ export function CapAuth({
                                 <div>
                                     <h3 className="font-medium text-white">Get Your Wallet Ready</h3>
                                     <p className="text-sm text-white/70">
-                                        Ensure you have your CapWallet installed and ready
+                                        Ensure you have your ZeroWallet installed and ready
                                     </p>
                                 </div>
                             </div>
@@ -222,7 +231,7 @@ export function CapAuth({
                         <div className="flex justify-center">
                             <div className="p-4 bg-white rounded-xl shadow-xl">
                                 <QRCodeSVG
-                                    value={qrData}
+                                    value={qrUri || ''} // Use the full URI here for the QR code
                                     size={256}
                                     level="M"
                                     includeMargin={true}
