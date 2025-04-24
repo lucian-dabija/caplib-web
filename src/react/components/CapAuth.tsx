@@ -1,335 +1,497 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect, useRef } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
+import { AnimatePresence, motion } from 'framer-motion';
+import {
+  Box,
+  Button,
+  Center,
+  Flex,
+  Heading,
+  HStack,
+  Icon,
+  IconButton,
+  Spinner,
+  Step,
+  StepDescription,
+  StepIcon,
+  StepIndicator,
+  StepNumber,
+  StepSeparator,
+  StepStatus,
+  StepTitle,
+  Stepper,
+  Text,
+  useSteps,
+  VStack,
+  useToast,
+} from '@chakra-ui/react';
+import { PhoneIcon, CheckIcon, CloseIcon, RepeatIcon } from '@chakra-ui/icons';
 import type { CapAuthProps, User } from '../../types';
 import { OnboardingForm } from './OnboardingForm';
-import { Card, Button } from './ui';
-import { fadeIn, slideUp } from '../utils';
+
+// Animation variants
+const fadeIn = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { duration: 0.3 } },
+  exit: { opacity: 0, transition: { duration: 0.2 } },
+};
+
+const slideRight = {
+  hidden: { x: -30, opacity: 0 },
+  visible: { x: 0, opacity: 1, transition: { duration: 0.4 } },
+  exit: { x: 30, opacity: 0, transition: { duration: 0.3 } },
+};
+
+// Steps for the authentication flow
+const steps = [
+  { title: 'Prepare', description: 'Get your wallet ready' },
+  { title: 'Scan', description: 'Scan QR with wallet' },
+  { title: 'Verify', description: 'Confirm transaction' },
+  { title: 'Profile', description: 'Complete setup' },
+];
 
 export function CapAuth({
-    onAuthenticated,
-    config,
-    onError
+  onAuthenticated,
+  config,
+  onError,
 }: CapAuthProps) {
-    const [stage, setStage] = useState<'intro' | 'qr' | 'polling' | 'onboarding'>('intro');
-    const [qrData, setQrData] = useState<string | null>(null);
-    const [qrUri, setQrUri] = useState<string | null>(null);
-    const [error, setError] = useState<string | null>(null);
-    const [nonce, setNonce] = useState<string | null>(null);
-    const [walletAddress, setWalletAddress] = useState<string | null>(null);
-    const [pollingInterval, setPollingInterval] = useState<ReturnType<typeof setInterval> | null>(null);
-    const [timeoutId, setTimeoutId] = useState<ReturnType<typeof setTimeout> | null>(null);
-    const [isPollingActive, setIsPollingActive] = useState(true);
+  const toast = useToast();
+  const { activeStep, setActiveStep } = useSteps({
+    index: 0,
+    count: steps.length,
+  });
+  
+  const [stage, setStage] = useState<'intro' | 'qr' | 'polling' | 'onboarding'>('intro');
+  const [qrData, setQrData] = useState<string | null>(null);
+  const [qrUri, setQrUri] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [nonce, setNonce] = useState<string | null>(null);
+  const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  const [isPollingActive, setIsPollingActive] = useState(true);
+  
+  // Use refs for intervals and timeouts to properly clean them up
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutIdRef = useRef<NodeJS.Timeout | null>(null);
+  const isAuthenticatedRef = useRef<boolean>(false);
 
-    const cleanupTimers = () => {
-        if (pollingInterval) {
-            clearInterval(pollingInterval);
-            setPollingInterval(null);
-        }
-        if (timeoutId) {
-            clearTimeout(timeoutId);
-            setTimeoutId(null);
-        }
-    };
+  const cleanupTimers = () => {
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
+    }
+    if (timeoutIdRef.current) {
+      clearTimeout(timeoutIdRef.current);
+      timeoutIdRef.current = null;
+    }
+  };
 
-    useEffect(() => {
-        return () => cleanupTimers();
-    }, []);
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => cleanupTimers();
+  }, []);
 
-    useEffect(() => {
-        if (stage === 'polling' && nonce && isPollingActive) {
-            const interval = setInterval(async () => {
-                try {
-                    const response = await fetch('/api/auth', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ nonce }),
-                    });
-
-                    if (!response.ok) throw new Error('Verification failed');
-
-                    const data = await response.json();
-                    if (data.authenticated && data.userAddress) {
-                        cleanupTimers();
-                        if (data.user) {
-                            onAuthenticated(data.user);
-                        } else {
-                            setWalletAddress(data.userAddress);
-                            setStage('onboarding');
-                        }
-                    }
-                } catch (error) {
-                    console.error('Polling error:', error);
-                }
-            }, config.timeouts?.polling || 3000);
-
-            setPollingInterval(interval);
-
-            const timeout = setTimeout(() => {
-                cleanupTimers();
-                setError('Authentication timeout. Please try again.');
-                setStage('intro');
-            }, config.timeouts?.authentication || 300000);
-
-            setTimeoutId(timeout);
-
-            return () => cleanupTimers();
-        }
-    }, [stage, nonce, onAuthenticated, isPollingActive, config]);
-
-    const generateQR = async () => {
+  // Effect for handling polling
+  useEffect(() => {
+    if (stage === 'polling' && nonce && isPollingActive && !isAuthenticatedRef.current) {
+      const interval = setInterval(async () => {
         try {
-            setError(null);
-            const response = await fetch('/api/auth');
-            const data = await response.json();
+          const response = await fetch('/api/auth', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nonce }),
+          });
 
-            if (!response.ok) {
-                throw new Error(data.error || 'Failed to generate authentication code');
+          if (!response.ok) throw new Error('Verification failed');
+
+          const data = await response.json();
+          if (data.authenticated && data.userAddress) {
+            // Mark as authenticated to prevent further polling
+            isAuthenticatedRef.current = true;
+            setIsPollingActive(false);
+            cleanupTimers();
+            
+            if (data.user) {
+              // Existing user, complete the process
+              onAuthenticated(data.user);
+              toast({
+                title: "Authentication successful",
+                status: "success",
+                duration: 3000,
+                isClosable: true,
+              });
+            } else {
+              // New user, show onboarding
+              setActiveStep(3); // Move to profile step
+              setWalletAddress(data.userAddress);
+              setStage('onboarding');
             }
-
-            const receiverAddr = process.env.NEXT_PUBLIC_SERVER_WALLET_ADDRESS || '';
-            const contractId = process.env.NEXT_PUBLIC_AUTH_CONTRACT_ID || '';
-            const tokenId = process.env.NEXT_PUBLIC_TOKEN_ID || '';
-            
-            // Make sure to include the AUTH_CONTRACT_ID from env
-            const txDetails = `smart_contract_auth_${contractId},nonce_${data.nonce}`;
-
-            // Format the transaction parameters correctly
-            const txParams = `amount=0,recipientAddress=${receiverAddr},senderAddress=customer_,timestamp=${new Date().toISOString()},tokenId=${tokenId},transactionCost=0,transactionDetails=${txDetails},transactionId=transaction_`;
-            
-            // Set both the data for QR and the URI for deep linking
-            setQrData(txParams);
-            setQrUri(`zerowallet://transaction?${txParams}`);
-            setNonce(data.nonce);
-            setStage('qr');
+          }
         } catch (error) {
-            console.error('QR generation error:', error);
-            setError('Failed to generate authentication code. Please try again.');
-            if (onError && error instanceof Error) {
-                onError(error);
-            }
+          console.error('Polling error:', error);
         }
-    };
+      }, config.timeouts?.polling || 3000);
 
-    const handleOpenMobileWallet = () => {
-        if (config.enableMobileWallet && qrUri) {
-            // Use the properly formatted URI
-            window.location.href = qrUri;
-        }
-    };
+      pollingIntervalRef.current = interval;
 
-    const handleRetry = () => {
+      // Set timeout for the entire authentication process
+      const timeout = setTimeout(() => {
         cleanupTimers();
-        setError(null);
-        setQrData(null);
-        setQrUri(null);
-        setNonce(null);
-        setWalletAddress(null);
+        setError('Authentication timeout. Please try again.');
         setStage('intro');
-        setIsPollingActive(true);
-    };
+        setActiveStep(0);
+      }, config.timeouts?.authentication || 300000);
 
-    const handleOnboardingComplete = (user: User) => {
-        if (walletAddress) {
-            onAuthenticated(user);
-        }
-    };
+      timeoutIdRef.current = timeout;
 
-    const {
-        theme = { primary: 'blue', secondary: 'teal' },
-        customStyles = {}
-    } = config;
+      return () => cleanupTimers();
+    }
+  }, [stage, nonce, isPollingActive, config, onAuthenticated, toast, setActiveStep]);
 
-    return (
-        <Card className={`w-full max-w-md p-6 backdrop-blur-lg bg-white/10 ${customStyles.card || ''}`}>
-            <div className="absolute bottom-2 right-2 w-24 h-10 opacity-50">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 80" className="text-white">
-                    <path d="M20 15h160v50H20z" fill="none" stroke="currentColor" strokeWidth="2" />
-                    <text x="100" y="45" textAnchor="middle" fill="currentColor"
-                        className="text-sm font-bold">CAPLIB</text>
-                </svg>
-            </div>
+  const generateQR = async () => {
+    try {
+      setError(null);
+      setActiveStep(1); // Move to scan step
+      
+      const response = await fetch('/api/auth');
+      const data = await response.json();
 
-            <AnimatePresence mode="wait">
-                {stage === 'intro' && (
-                    <motion.div
-                        key="intro"
-                        variants={slideUp}
-                        initial="hidden"
-                        animate="visible"
-                        exit="hidden"
-                        className="space-y-6"
-                    >
-                        <div className="text-center space-y-2">
-                            <h1 className={`text-3xl font-bold bg-gradient-to-r from-${theme.primary}-400 to-${theme.secondary}-400 bg-clip-text text-transparent`}>
-                                {config.appName}
-                            </h1>
-                            <p className="text-white/70">
-                                {config.appDescription}
-                            </p>
-                        </div>
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to generate authentication code');
+      }
 
-                        <div className="space-y-4">
-                            <div className="flex items-start gap-4 p-4 rounded-lg bg-white/5">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-400 mt-1 shrink-0">
-                                    <rect width="14" height="20" x="5" y="2" rx="2" ry="2" />
-                                    <path d="M12 18h.01" />
-                                </svg>
-                                <div>
-                                    <h3 className="font-medium text-white">Get Your Wallet Ready</h3>
-                                    <p className="text-sm text-white/70">
-                                        Ensure you have your ZeroWallet installed and ready
-                                    </p>
-                                </div>
-                            </div>
+      const receiverAddr = process.env.NEXT_PUBLIC_SERVER_WALLET_ADDRESS || '';
+      const contractId = process.env.NEXT_PUBLIC_AUTH_CONTRACT_ID || '';
+      const tokenId = process.env.NEXT_PUBLIC_TOKEN_ID || '';
+      
+      // Make sure to include the AUTH_CONTRACT_ID from env
+      const txDetails = `smart_contract_auth_${contractId},nonce_${data.nonce}`;
 
-                            <div className="flex items-start gap-4 p-4 rounded-lg bg-white/5">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-teal-400 mt-1 shrink-0">
-                                    <rect width="18" height="18" x="3" y="3" rx="2" />
-                                    <path d="M7 7h.01M12 7h.01M17 7h.01M7 12h.01M12 12h.01M17 12h.01M7 17h.01M12 17h.01M17 17h.01" />
-                                </svg>
-                                <div>
-                                    <h3 className="font-medium text-white">Credentialless Auth</h3>
-                                    <p className="text-sm text-white/70">
-                                        Scan QR code with your wallet for secure login
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
+      // Format the transaction parameters correctly
+      const txParams = `amount=0,recipientAddress=${receiverAddr},senderAddress=customer_,timestamp=${new Date().toISOString()},tokenId=${tokenId},transactionCost=0,transactionDetails=${txDetails},transactionId=transaction_`;
+      
+      // Set both the data for QR and the URI for deep linking
+      setQrData(txParams);
+      setQrUri(`zerowallet://transaction?${txParams}`);
+      setNonce(data.nonce);
+      setStage('qr');
+    } catch (error) {
+      console.error('QR generation error:', error);
+      setError('Failed to generate authentication code. Please try again.');
+      
+      toast({
+        title: "Error",
+        description: "Failed to generate authentication code. Please try again.",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+      
+      if (onError && error instanceof Error) {
+        onError(error);
+      }
+    }
+  };
 
-                        <Button
-                            className={`w-full bg-gradient-to-r from-${theme.primary}-500 to-${theme.secondary}-500 text-white ${customStyles.button}`}
-                            onClick={generateQR}
-                        >
-                            Start Authentication
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-2">
-                                <path d="M5 12h14" />
-                                <path d="m12 5 7 7-7 7" />
-                            </svg>
-                        </Button>
-                    </motion.div>
-                )}
+  const handleOpenMobileWallet = () => {
+    if (config.enableMobileWallet && qrUri) {
+      // Use the properly formatted URI
+      window.location.href = qrUri;
+    }
+  };
 
-                {stage === 'qr' && qrData && (
-                    <motion.div
-                        key="qr"
-                        variants={fadeIn}
-                        initial="hidden"
-                        animate="visible"
-                        exit="hidden"
-                        className="space-y-6"
-                    >
-                        <div className="text-center space-y-2">
-                            <h2 className="text-2xl font-bold text-white">Scan QR Code</h2>
-                            <p className="text-sm text-white/70">
-                                Open your wallet app and scan this code
-                            </p>
-                        </div>
+  const proceedToVerification = () => {
+    setActiveStep(2); // Move to verify step
+    setStage('polling');
+    setIsPollingActive(true);
+  };
 
-                        <div className="flex justify-center">
-                            <div className="p-4 bg-white rounded-xl shadow-xl">
-                                <QRCodeSVG
-                                    value={qrUri || ''} // Use the full URI here for the QR code
-                                    size={256}
-                                    level="M"
-                                    includeMargin={true}
-                                />
-                            </div>
-                        </div>
+  const handleRetry = () => {
+    // Reset everything
+    cleanupTimers();
+    setError(null);
+    setQrData(null);
+    setQrUri(null);
+    setNonce(null);
+    setWalletAddress(null);
+    setStage('intro');
+    setActiveStep(0);
+    setIsPollingActive(true);
+    isAuthenticatedRef.current = false;
+  };
 
-                        <div className="text-center space-y-4">
-                            {config.enableMobileWallet && (
-                                <Button
-                                    variant="outline"
-                                    onClick={handleOpenMobileWallet}
-                                    className={`w-full ${customStyles.button}`}
-                                >
-                                    Open in Mobile Wallet
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-2">
-                                        <rect width="14" height="20" x="5" y="2" rx="2" ry="2" />
-                                        <path d="M12 18h.01" />
-                                    </svg>
-                                </Button>
-                            )}
+  const handleOnboardingComplete = (user: User) => {
+    // Stop polling permanently after onboarding
+    setIsPollingActive(false);
+    isAuthenticatedRef.current = true;
+    
+    if (walletAddress) {
+      onAuthenticated(user);
+      toast({
+        title: "Profile completed",
+        description: "You're now successfully signed in.",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+  };
 
-                            <Button
-                                variant="outline"
-                                onClick={() => setStage('polling')}
-                                className={`w-full ${customStyles.button}`}
-                            >
-                                I've Completed the Transaction
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-2">
-                                    <path d="M20 6 9 17l-5-5" />
-                                </svg>
-                            </Button>
-                        </div>
-                    </motion.div>
-                )}
+  const {
+    theme = { primary: 'blue', secondary: 'teal' },
+  } = config;
 
-                {stage === 'polling' && (
-                    <motion.div
-                        key="polling"
-                        variants={fadeIn}
-                        initial="hidden"
-                        animate="visible"
-                        exit="hidden"
-                        className="space-y-6 text-center"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin mx-auto text-white">
-                            <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-                        </svg>
-                        <div>
-                            <h2 className="text-2xl font-bold text-white">Verifying</h2>
-                            <p className="text-sm text-white/70 mt-2">
-                                Please wait while we confirm your transaction...
-                            </p>
-                        </div>
-                    </motion.div>
-                )}
+  return (
+    <Box 
+      width="100%" 
+      maxW="md" 
+      borderRadius="xl" 
+      overflow="hidden"
+      bg="dark.200"
+      borderWidth="1px"
+      borderColor="whiteAlpha.200"
+      boxShadow="xl"
+      position="relative"
+    >
+      {/* Progress Stepper */}
+      <Box p={4} bg="whiteAlpha.50">
+        <Stepper index={activeStep} colorScheme="brand" size="sm">
+          {steps.map((step, index) => (
+            <Step key={index}>
+              <StepIndicator>
+                <StepStatus
+                  complete={<StepIcon />}
+                  incomplete={<StepNumber />}
+                  active={<StepNumber />}
+                />
+              </StepIndicator>
+              <Box flexShrink={0}>
+                <StepTitle>{step.title}</StepTitle>
+                <StepDescription>{step.description}</StepDescription>
+              </Box>
+              <StepSeparator />
+            </Step>
+          ))}
+        </Stepper>
+      </Box>
 
-                {stage === 'onboarding' && walletAddress && (
-                    <motion.div
-                        key="onboarding"
-                        variants={fadeIn}
-                        initial="hidden"
-                        animate="visible"
-                        exit="hidden"
-                    >
-                        <OnboardingForm
-                            walletAddress={walletAddress}
-                            onComplete={handleOnboardingComplete}
-                            onBack={handleRetry}
-                            theme={theme}
-                            customStyles={customStyles}
-                        />
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            {error && (
-                <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="mt-4 p-4 bg-red-500/10 rounded-lg"
+      {/* Main Content Area */}
+      <AnimatePresence mode="wait">
+        {stage === 'intro' && (
+          <motion.div
+            key="intro"
+            variants={fadeIn}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+          >
+            <VStack spacing={6} p={6}>
+              <Box textAlign="center">
+                <Heading 
+                  as="h1" 
+                  size="xl" 
+                  bgGradient={`linear(to-r, ${theme.primary}.400, ${theme.secondary}.400)`}
+                  backgroundClip="text"
+                  mb={2}
                 >
-                    <p className="text-sm text-red-400 text-center">{error}</p>
-                    <Button
-                        variant="outline"
-                        className="w-full mt-2 text-white"
-                        onClick={handleRetry}
+                  {config.appName}
+                </Heading>
+                <Text color="whiteAlpha.700">
+                  {config.appDescription}
+                </Text>
+              </Box>
+
+              <VStack spacing={4} w="full">
+                <Flex 
+                  align="flex-start" 
+                  gap={4} 
+                  p={4} 
+                  bg="whiteAlpha.50" 
+                  borderRadius="lg" 
+                  w="full"
+                >
+                  <Box color="blue.400" mt={1}>
+                    <PhoneIcon boxSize={5} />
+                  </Box>
+                  <Box>
+                    <Text fontWeight="medium">Get Your Wallet Ready</Text>
+                    <Text fontSize="sm" color="whiteAlpha.700">
+                      Ensure you have ZeroWallet installed and ready
+                    </Text>
+                  </Box>
+                </Flex>
+
+                <Flex 
+                  align="flex-start" 
+                  gap={4} 
+                  p={4} 
+                  bg="whiteAlpha.50" 
+                  borderRadius="lg" 
+                  w="full"
+                >
+                  <Box color="teal.400" mt={1}>
+                    <Icon 
+                      viewBox="0 0 24 24" 
+                      boxSize={5}
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
-                            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
-                            <path d="M21 3v5h-5" />
-                            <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
-                            <path d="M8 16H3v5" />
-                        </svg>
-                        Try Again
-                    </Button>
-                </motion.div>
-            )}
-        </Card>
-    );
+                      <path
+                        fill="currentColor"
+                        d="M3 11h8V3H3v8zm2-6h4v4H5V5zm8-2v8h8V3h-8zm6 6h-4V5h4v4zM3 21h8v-8H3v8zm2-6h4v4H5v-4zm13-2h-2v4h-4v2h4v4h2v-4h4v-2h-4v-4z"
+                      />
+                    </Icon>
+                  </Box>
+                  <Box>
+                    <Text fontWeight="medium">Credentialless Auth</Text>
+                    <Text fontSize="sm" color="whiteAlpha.700">
+                      Scan QR code with your wallet for secure login
+                    </Text>
+                  </Box>
+                </Flex>
+              </VStack>
+
+              <Button
+                w="full"
+                variant="gradient"
+                size="lg"
+                onClick={generateQR}
+                rightIcon={<Icon viewBox="0 0 24 24" boxSize={5}>
+                  <path
+                    fill="currentColor"
+                    d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8-8-8z"
+                  />
+                </Icon>}
+              >
+                Start Authentication
+              </Button>
+            </VStack>
+          </motion.div>
+        )}
+
+        {stage === 'qr' && qrData && (
+          <motion.div
+            key="qr"
+            variants={slideRight}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+          >
+            <VStack spacing={6} p={6}>
+              <Box textAlign="center">
+                <Heading as="h2" size="lg" mb={2}>Scan QR Code</Heading>
+                <Text color="whiteAlpha.700" fontSize="sm">
+                  Open your wallet app and scan this code
+                </Text>
+              </Box>
+
+              <Center py={6}>
+                <Box p={4} bg="white" borderRadius="xl" boxShadow="xl">
+                  <QRCodeSVG
+                    value={qrUri || ''}
+                    size={220}
+                    level="M"
+                    includeMargin={true}
+                  />
+                </Box>
+              </Center>
+
+              <VStack spacing={4} w="full">
+                {config.enableMobileWallet && (
+                  <Button
+                    w="full"
+                    variant="outline"
+                    onClick={handleOpenMobileWallet}
+                    leftIcon={<PhoneIcon />}
+                  >
+                    Open in Mobile Wallet
+                  </Button>
+                )}
+
+                <Button
+                  w="full"
+                  variant="gradient"
+                  onClick={proceedToVerification}
+                  rightIcon={<CheckIcon />}
+                >
+                  I've Completed the Transaction
+                </Button>
+              </VStack>
+            </VStack>
+          </motion.div>
+        )}
+
+        {stage === 'polling' && (
+          <motion.div
+            key="polling"
+            variants={fadeIn}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+          >
+            <VStack spacing={6} p={8} textAlign="center">
+              <Spinner
+                thickness="4px"
+                speed="0.65s"
+                emptyColor="whiteAlpha.200"
+                color="brand.500"
+                size="xl"
+              />
+              
+              <Box>
+                <Heading as="h2" size="lg" mb={2}>Verifying</Heading>
+                <Text color="whiteAlpha.700">
+                  Please wait while we confirm your transaction...
+                </Text>
+              </Box>
+            </VStack>
+          </motion.div>
+        )}
+
+        {stage === 'onboarding' && walletAddress && (
+          <motion.div
+            key="onboarding"
+            variants={slideRight}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+          >
+            <OnboardingForm
+              walletAddress={walletAddress}
+              onComplete={handleOnboardingComplete}
+              onBack={handleRetry}
+              theme={theme}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Error Message */}
+      {error && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <Box p={4} bg="red.900" color="white" mt={2}>
+            <VStack spacing={4}>
+              <Text color="red.200" textAlign="center">{error}</Text>
+              <Button
+                leftIcon={<RepeatIcon />}
+                colorScheme="red"
+                variant="outline"
+                size="sm"
+                onClick={handleRetry}
+              >
+                Try Again
+              </Button>
+            </VStack>
+          </Box>
+        </motion.div>
+      )}
+
+      {/* Brand Mark */}
+      <Box position="absolute" bottom={2} right={2} opacity={0.5}>
+        <Text fontSize="xs" color="whiteAlpha.500">CAPLIB</Text>
+      </Box>
+    </Box>
+  );
 }

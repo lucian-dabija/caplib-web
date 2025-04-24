@@ -1,6 +1,6 @@
 {
     "name": "caplib",
-    "version": "0.1.7",
+    "version": "0.1.8",
     "author": "ZEROCAT",
     "license": "BSD-3-Clause",
     "description": "Credentialless Authentication Protocol Library for Web Applications",
@@ -60,6 +60,9 @@
         "caplib"
     ],
     "peerDependencies": {
+        "@chakra-ui/react": "^2.8.0",
+        "@emotion/react": "^11.11.0",
+        "@emotion/styled": "^11.11.0",
         "framer-motion": "^10.0.0 || ^11.0.0",
         "next": "^13.0.0 || ^14.0.0 || ^15.0.0",
         "qrcode.react": "^3.0.0 || ^4.0.0",
@@ -68,6 +71,10 @@
         "vue": "^3.0.0"
     },
     "dependencies": {
+        "@chakra-ui/icons": "^2.1.0",
+        "@chakra-ui/react": "^2.8.0",
+        "@emotion/react": "^11.11.0",
+        "@emotion/styled": "^11.11.0",
         "clsx": "^2.1.1",
         "crypto-js": "^4.2.0",
         "fs": "0.0.1-security",

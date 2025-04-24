@@ -7,6 +7,7 @@ export {
 export type {
     User,
     UserDetails,
+    NewUserData,
     CapAuthConfig,
     AuthResponse,
     AuthProviderProps,
