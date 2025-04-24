@@ -12,9 +12,9 @@ import {
   HStack,
   Icon,
   IconButton,
+  Image,
   Spinner,
   Step,
-  StepDescription,
   StepIcon,
   StepIndicator,
   StepNumber,
@@ -44,12 +44,12 @@ const slideRight = {
   exit: { x: 30, opacity: 0, transition: { duration: 0.3 } },
 };
 
-// Steps for the authentication flow
+// Steps for the authentication flow (removed descriptions to save space)
 const steps = [
-  { title: 'Prepare', description: 'Get your wallet ready' },
-  { title: 'Scan', description: 'Scan QR with wallet' },
-  { title: 'Verify', description: 'Confirm transaction' },
-  { title: 'Profile', description: 'Complete setup' },
+  { title: 'Prepare' },
+  { title: 'Scan' },
+  { title: 'Verify' },
+  { title: 'Profile' },
 ];
 
 export function CapAuth({
@@ -244,7 +244,7 @@ export function CapAuth({
 
   return (
     <Box 
-      width="100%" 
+      width={{ base: "90vw", sm: "100%" }}
       maxW="md" 
       borderRadius="xl" 
       overflow="hidden"
@@ -254,8 +254,8 @@ export function CapAuth({
       boxShadow="xl"
       position="relative"
     >
-      {/* Progress Stepper */}
-      <Box p={4} bg="whiteAlpha.50">
+      {/* Progress Stepper - Removed descriptions to save space */}
+      <Box p={{ base: 2, sm: 4 }} bg="whiteAlpha.50">
         <Stepper index={activeStep} colorScheme="brand" size="sm">
           {steps.map((step, index) => (
             <Step key={index}>
@@ -267,8 +267,7 @@ export function CapAuth({
                 />
               </StepIndicator>
               <Box flexShrink={0}>
-                <StepTitle>{step.title}</StepTitle>
-                <StepDescription>{step.description}</StepDescription>
+                <StepTitle fontSize={{ base: "xs", sm: "sm" }}>{step.title}</StepTitle>
               </Box>
               <StepSeparator />
             </Step>
@@ -286,18 +285,18 @@ export function CapAuth({
             animate="visible"
             exit="exit"
           >
-            <VStack spacing={6} p={6}>
+            <VStack spacing={{ base: 4, sm: 6 }} p={{ base: 4, sm: 6 }}>
               <Box textAlign="center">
                 <Heading 
                   as="h1" 
-                  size="xl" 
+                  size={{ base: "lg", sm: "xl" }}
                   bgGradient={`linear(to-r, ${theme.primary}.400, ${theme.secondary}.400)`}
                   backgroundClip="text"
                   mb={2}
                 >
                   {config.appName}
                 </Heading>
-                <Text color="whiteAlpha.700">
+                <Text color="whiteAlpha.700" fontSize={{ base: "sm", sm: "md" }}>
                   {config.appDescription}
                 </Text>
               </Box>
@@ -312,11 +311,11 @@ export function CapAuth({
                   w="full"
                 >
                   <Box color="blue.400" mt={1}>
-                    <PhoneIcon boxSize={5} />
+                    <PhoneIcon boxSize={{ base: 4, sm: 5 }} />
                   </Box>
                   <Box>
-                    <Text fontWeight="medium">Get Your Wallet Ready</Text>
-                    <Text fontSize="sm" color="whiteAlpha.700">
+                    <Text fontWeight="medium" fontSize={{ base: "sm", sm: "md" }}>Get Your Wallet Ready</Text>
+                    <Text fontSize={{ base: "xs", sm: "sm" }} color="whiteAlpha.700">
                       Ensure you have ZeroWallet installed and ready
                     </Text>
                   </Box>
@@ -333,7 +332,7 @@ export function CapAuth({
                   <Box color="teal.400" mt={1}>
                     <Icon 
                       viewBox="0 0 24 24" 
-                      boxSize={5}
+                      boxSize={{ base: 4, sm: 5 }}
                     >
                       <path
                         fill="currentColor"
@@ -342,8 +341,8 @@ export function CapAuth({
                     </Icon>
                   </Box>
                   <Box>
-                    <Text fontWeight="medium">Credentialless Auth</Text>
-                    <Text fontSize="sm" color="whiteAlpha.700">
+                    <Text fontWeight="medium" fontSize={{ base: "sm", sm: "md" }}>Credentialless Auth</Text>
+                    <Text fontSize={{ base: "xs", sm: "sm" }} color="whiteAlpha.700">
                       Scan QR code with your wallet for secure login
                     </Text>
                   </Box>
@@ -353,9 +352,9 @@ export function CapAuth({
               <Button
                 w="full"
                 variant="gradient"
-                size="lg"
+                size={{ base: "md", sm: "lg" }}
                 onClick={generateQR}
-                rightIcon={<Icon viewBox="0 0 24 24" boxSize={5}>
+                rightIcon={<Icon viewBox="0 0 24 24" boxSize={{ base: 4, sm: 5 }}>
                   <path
                     fill="currentColor"
                     d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8-8-8z"
@@ -376,19 +375,19 @@ export function CapAuth({
             animate="visible"
             exit="exit"
           >
-            <VStack spacing={6} p={6}>
+            <VStack spacing={{ base: 4, sm: 6 }} p={{ base: 4, sm: 6 }}>
               <Box textAlign="center">
-                <Heading as="h2" size="lg" mb={2}>Scan QR Code</Heading>
-                <Text color="whiteAlpha.700" fontSize="sm">
+                <Heading as="h2" size={{ base: "md", sm: "lg" }} mb={2}>Scan QR Code</Heading>
+                <Text color="whiteAlpha.700" fontSize={{ base: "xs", sm: "sm" }}>
                   Open your wallet app and scan this code
                 </Text>
               </Box>
 
-              <Center py={6}>
-                <Box p={4} bg="white" borderRadius="xl" boxShadow="xl">
+              <Center py={{ base: 4, sm: 6 }}>
+                <Box p={{ base: 3, sm: 4 }} bg="white" borderRadius="xl" boxShadow="xl">
                   <QRCodeSVG
                     value={qrUri || ''}
-                    size={220}
+                    size={Math.min(220, window.innerWidth * 0.6)}
                     level="M"
                     includeMargin={true}
                   />
@@ -402,6 +401,7 @@ export function CapAuth({
                     variant="outline"
                     onClick={handleOpenMobileWallet}
                     leftIcon={<PhoneIcon />}
+                    size={{ base: "sm", sm: "md" }}
                   >
                     Open in Mobile Wallet
                   </Button>
@@ -412,6 +412,7 @@ export function CapAuth({
                   variant="gradient"
                   onClick={proceedToVerification}
                   rightIcon={<CheckIcon />}
+                  size={{ base: "sm", sm: "md" }}
                 >
                   I've Completed the Transaction
                 </Button>
@@ -428,18 +429,18 @@ export function CapAuth({
             animate="visible"
             exit="exit"
           >
-            <VStack spacing={6} p={8} textAlign="center">
+            <VStack spacing={6} p={{ base: 6, sm: 8 }} textAlign="center">
               <Spinner
                 thickness="4px"
                 speed="0.65s"
                 emptyColor="whiteAlpha.200"
                 color="brand.500"
-                size="xl"
+                size={{ base: "lg", sm: "xl" }}
               />
               
               <Box>
-                <Heading as="h2" size="lg" mb={2}>Verifying</Heading>
-                <Text color="whiteAlpha.700">
+                <Heading as="h2" size={{ base: "md", sm: "lg" }} mb={2}>Verifying</Heading>
+                <Text color="whiteAlpha.700" fontSize={{ base: "sm", sm: "md" }}>
                   Please wait while we confirm your transaction...
                 </Text>
               </Box>
@@ -471,9 +472,9 @@ export function CapAuth({
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <Box p={4} bg="red.900" color="white" mt={2}>
-            <VStack spacing={4}>
-              <Text color="red.200" textAlign="center">{error}</Text>
+          <Box p={{ base: 3, sm: 4 }} bg="red.900" color="white" mt={2}>
+            <VStack spacing={{ base: 3, sm: 4 }}>
+              <Text color="red.200" textAlign="center" fontSize={{ base: "sm", sm: "md" }}>{error}</Text>
               <Button
                 leftIcon={<RepeatIcon />}
                 colorScheme="red"
@@ -488,10 +489,23 @@ export function CapAuth({
         </motion.div>
       )}
 
-      {/* Brand Mark */}
-      <Box position="absolute" bottom={2} right={2} opacity={0.5}>
-        <Text fontSize="xs" color="whiteAlpha.500">CAPLIB</Text>
-      </Box>
+      {/* Footer with ZEROCAT logo */}
+      <Flex 
+        justifyContent="center" 
+        alignItems="center" 
+        p={2} 
+        borderTop="1px" 
+        borderColor="whiteAlpha.100"
+        bg="whiteAlpha.50"
+      >
+        <Text fontSize="xs" color="whiteAlpha.600" mr={1}>Powered by</Text>
+        <Image 
+          src="/zerocat.png" 
+          alt="ZEROCAT" 
+          height={{ base: "10px", sm: "12px" }} 
+          width={{ base: "24px", sm: "28px" }}
+        />
+      </Flex>
     </Box>
   );
 }
