@@ -44,7 +44,7 @@ export function AuthProvider({
       polling: 3000
     },
     enableMobileWallet: true,
-    mobileWalletScheme: "capwallet://",
+    mobileWalletScheme: "zerowallet://",
     ...config
   };
 
@@ -122,12 +122,24 @@ export function AuthProvider({
           isOpen={isOpen} 
           onClose={onClose}
           isCentered
-          size="lg"
+          size="md"
           closeOnOverlayClick={false}
         >
           <ModalOverlay backdropFilter="blur(10px)" bg="blackAlpha.700" />
-          <ModalContent bg="transparent" boxShadow="none">
-            <ModalCloseButton color="white" />
+          <ModalContent 
+            bg="transparent" 
+            boxShadow="none"
+            width="auto"
+            maxWidth="100%"
+            margin="0"
+          >
+            <ModalCloseButton 
+              color="white" 
+              zIndex="popover"
+              position="absolute"
+              right="4px"
+              top="4px"
+            />
             <ModalBody p={0} display="flex" justifyContent="center">
               <CapAuth
                 onAuthenticated={handleAuthenticated}
