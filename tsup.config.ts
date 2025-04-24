@@ -3,7 +3,7 @@ import { defineConfig } from 'tsup';
 export default defineConfig({
     entry: [
         'src/index.ts',
-        'src/react/index.ts',
+        'src/react/index.tsx',
         'src/server/index.ts',
         'src/vue/index.ts',
     ],
