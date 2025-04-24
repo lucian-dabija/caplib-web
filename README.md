@@ -7,9 +7,9 @@ A modern, secure, and easy-to-use credentialless authentication library for web 
 ## Features At a Glance
 
 - 🎨 **Beautiful Modal UI**: Clean design with smooth animations and integrated Chakra UI
-- 🔐 **Secure Authentication**: QR code-based blockchain authentication
+- 🔐 **Secure Authentication**: QR code-based blockchain authentication with ZeroWallet support
 - 🔒 **Encrypted Storage**: Built-in encrypted JSON database
-- 📱 **Mobile Ready**: Optional mobile wallet integration
+- 📱 **Mobile Ready**: ZeroWallet Android URI integrated
 - 🔄 **Simple Onboarding**: Intuitive user registration with account type selection
 - ⚡ **Zero Config**: No manual route setup needed
 - 🎯 **Simple Integration**: Just wrap your components

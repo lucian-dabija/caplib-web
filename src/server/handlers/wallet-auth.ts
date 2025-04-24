@@ -7,7 +7,7 @@ const getEnvVariable = (name: string, fallbackName?: string): string => {
     if (!value && fallbackName) {
         value = process.env[fallbackName];
     }
-    
+
     if (!value) {
         throw new Error(`Required environment variable ${name}${fallbackName ? ` or ${fallbackName}` : ''} is not set`);
     }
@@ -33,7 +33,6 @@ export const createAuthHandler = (config?: AuthHandlerConfig) => {
         try {
             const API_URL = getEnvVariable('CAPLIB_API_URL');
             const API_KEY = getEnvVariable('CAPLIB_API_KEY');
-            // Use NEXT_PUBLIC_AUTH_CONTRACT_ID if AUTH_CONTRACT_ID is not available
             const CONTRACT_ID = getEnvVariable('NEXT_PUBLIC_AUTH_CONTRACT_ID', 'AUTH_CONTRACT_ID');
 
             await initialize();
@@ -72,7 +71,6 @@ export const createAuthHandler = (config?: AuthHandlerConfig) => {
         try {
             const API_URL = getEnvVariable('CAPLIB_API_URL');
             const API_KEY = getEnvVariable('CAPLIB_API_KEY');
-            // Use NEXT_PUBLIC_AUTH_CONTRACT_ID if AUTH_CONTRACT_ID is not available
             const CONTRACT_ID = getEnvVariable('NEXT_PUBLIC_AUTH_CONTRACT_ID', 'AUTH_CONTRACT_ID');
 
             await initialize();

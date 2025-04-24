@@ -20,7 +20,8 @@
         "dist",
         "scripts",
         "README.md",
-        "LICENSE"
+        "LICENSE",
+        "zerocat.png"
     ],
     "exports": {
         ".": {
