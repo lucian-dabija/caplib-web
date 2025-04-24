@@ -1,4 +1,4 @@
-# CapLib-Web | Credentialless Authentication Protocol from ZEROCAT | Powered by ZeroBrix blockchain technology
+# CapLib | Credentialless Authentication Protocol from ZEROCAT | Powered by ZeroBrix blockchain technology
 
 ![CapLib Banner](./banner.png)
 
@@ -20,13 +20,13 @@ A modern, secure, and easy-to-use credentialless authentication library for web 
 
 ```bash
 # Using npm
-npm install caplib-web
+npm install caplib
 
 # Using yarn
-yarn add caplib-web
+yarn add caplib
 
 # Using pnpm
-pnpm add caplib-web
+pnpm add caplib
 ```
 
 ## Quick Start Guide
@@ -54,7 +54,7 @@ DB_ENCRYPTION_KEY=your_random_32_byte_hex_string
 Create `app/api/auth/route.ts`:
 
 ```typescript
-import { createAuthHandler } from 'caplib-web';
+import { createAuthHandler } from 'caplib';
 
 // Important for Next.js dynamic routes
 export const dynamic = 'force-dynamic';
@@ -73,7 +73,7 @@ export const { GET, POST } = createAuthHandler({
 In your `app/layout.tsx`:
 
 ```typescript
-import { AuthProvider } from 'caplib-web';
+import { AuthProvider } from 'caplib';
 
 export default function RootLayout({
   children
@@ -111,7 +111,7 @@ Simply wrap any page that needs authentication:
 ```typescript
 'use client';
 
-import { withAuth, useAuth } from 'caplib-web';
+import { withAuth, useAuth } from 'caplib';
 
 function ProtectedPage() {
   const { user, logout } = useAuth();
@@ -151,7 +151,7 @@ For Vue.js applications, you can use the Vue wrapper:
 
 <script setup>
 import { ref } from 'vue';
-import { VueCapAuth } from 'caplib-web/vue';
+import { VueCapAuth } from 'caplib/vue';
 
 const authConfig = {
   appName: "Vue Application",
@@ -228,7 +228,7 @@ The library supports two types of accounts:
 <AuthProvider
   config={{
     enableMobileWallet: true,
-    mobileWalletScheme: "mywalletapp://"
+    mobileWalletScheme: "zerowallet://"
   }}
 >
 ```
