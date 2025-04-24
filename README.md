@@ -33,19 +33,19 @@ pnpm add caplib
 
 ### 1. Environment Variables
 
-Create or update `.env.local` in your project root:
+Create or update `.env.local` in your project root. Generate the database encryption key with `openssl rand -hex 32`.:
 
 ```env
 # Required: API Configuration
 CAPLIB_API_URL=https://brix.zerocat.one/api/v2
 CAPLIB_API_KEY=your_api_key
-AUTH_CONTRACT_ID=your_contract_id
 
 # Required: Public Variables
 NEXT_PUBLIC_SERVER_WALLET_ADDRESS=your_wallet_address
 NEXT_PUBLIC_TOKEN_ID=your_token_id
+NEXT_PUBLIC_AUTH_CONTRACT_ID=your_contract_id
 
-# Optional: Database Encryption
+# Database Encryption
 DB_ENCRYPTION_KEY=your_random_32_byte_hex_string
 ```
 
