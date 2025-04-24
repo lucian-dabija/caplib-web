@@ -2,10 +2,14 @@ import { NextRequest } from 'next/server';
 import type { AuthHandlerConfig, AuthResponse, NonceResponse } from '../../types';
 import { EncryptedJSONDatabase } from '../db/encrypted-json-db';
 
-const getEnvVariable = (name: string): string => {
-    const value = process.env[name];
+const getEnvVariable = (name: string, fallbackName?: string): string => {
+    let value = process.env[name];
+    if (!value && fallbackName) {
+        value = process.env[fallbackName];
+    }
+    
     if (!value) {
-        throw new Error(`Required environment variable ${name} is not set`);
+        throw new Error(`Required environment variable ${name}${fallbackName ? ` or ${fallbackName}` : ''} is not set`);
     }
     return value;
 };
@@ -29,7 +33,8 @@ export const createAuthHandler = (config?: AuthHandlerConfig) => {
         try {
             const API_URL = getEnvVariable('CAPLIB_API_URL');
             const API_KEY = getEnvVariable('CAPLIB_API_KEY');
-            const CONTRACT_ID = getEnvVariable('AUTH_CONTRACT_ID');
+            // Use NEXT_PUBLIC_AUTH_CONTRACT_ID if AUTH_CONTRACT_ID is not available
+            const CONTRACT_ID = getEnvVariable('NEXT_PUBLIC_AUTH_CONTRACT_ID', 'AUTH_CONTRACT_ID');
 
             await initialize();
 
@@ -67,7 +72,8 @@ export const createAuthHandler = (config?: AuthHandlerConfig) => {
         try {
             const API_URL = getEnvVariable('CAPLIB_API_URL');
             const API_KEY = getEnvVariable('CAPLIB_API_KEY');
-            const CONTRACT_ID = getEnvVariable('AUTH_CONTRACT_ID');
+            // Use NEXT_PUBLIC_AUTH_CONTRACT_ID if AUTH_CONTRACT_ID is not available
+            const CONTRACT_ID = getEnvVariable('NEXT_PUBLIC_AUTH_CONTRACT_ID', 'AUTH_CONTRACT_ID');
 
             await initialize();
 

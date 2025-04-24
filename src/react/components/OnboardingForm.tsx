@@ -1,228 +1,275 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import type { User, UserDetails } from '../../types';
 import {
-    Card,
-    Button,
-    Input,
-    Label,
-    Select,
-    Option,
-    Tabs,
-    TabsHeader,
-    TabsContent,
-    Tab,
-    TabPanel
-} from './ui';
+  Box,
+  Button,
+  Flex,
+  FormControl,
+  FormLabel,
+  Heading,
+  Input,
+  Radio,
+  RadioGroup,
+  Select,
+  Stack,
+  Text,
+  VStack,
+  useToast,
+  FormErrorMessage,
+} from '@chakra-ui/react';
+import type { User, UserDetails } from '../../types';
 
 interface OnboardingFormProps {
-    walletAddress: string;
-    onComplete: (user: User) => void;
-    onBack: () => void;
-    theme?: {
-        primary: string;
-        secondary: string;
-    };
-    customStyles?: {
-        container?: string;
-        card?: string;
-        button?: string;
-        input?: string;
-        select?: string;
-    };
+  walletAddress: string;
+  onComplete: (user: User) => void;
+  onBack: () => void;
+  theme?: {
+    primary: string;
+    secondary: string;
+  };
+  customStyles?: {
+    container?: string;
+    card?: string;
+    button?: string;
+    input?: string;
+    select?: string;
+  };
 }
 
 type AccountType = 'human' | 'entity';
 
 export function OnboardingForm({
-    walletAddress,
-    onComplete,
-    onBack,
-    theme = { primary: 'blue', secondary: 'teal' },
-    customStyles = {}
+  walletAddress,
+  onComplete,
+  onBack,
+  theme = { primary: 'blue', secondary: 'teal' },
 }: OnboardingFormProps) {
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [accountType, setAccountType] = useState<AccountType>('human');
+  const toast = useToast();
+  const [loading, setLoading] = useState(false);
+  const [accountType, setAccountType] = useState<AccountType>('human');
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-    const [details, setDetails] = useState<UserDetails>({
-        first_name: '',
-        last_name: '',
-        entity_name: '',
-        email: '',
-        role: 'User'
-    });
+  const [details, setDetails] = useState<UserDetails>({
+    first_name: '',
+    last_name: '',
+    entity_name: '',
+    email: '',
+    role: 'User',
+  });
 
-    const handleDetailsChange = <K extends keyof UserDetails>(
-        key: K,
-        value: UserDetails[K]
-    ) => {
-        setDetails(prev => ({
-            ...prev,
-            [key]: value
-        }));
-    };
+  const handleDetailsChange = <K extends keyof UserDetails>(
+    key: K,
+    value: UserDetails[K]
+  ) => {
+    setDetails((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setLoading(true);
-        setError(null);
+    // Clear error for this field if it exists
+    if (errors[key]) {
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[key];
+        return newErrors;
+      });
+    }
+  };
 
-        try {
-            // Create different payload based on account type
-            const payload = {
-                wallet_address: walletAddress,
-                ...details,
-                first_name: accountType === 'human' ? details.first_name : details.entity_name,
-                last_name: accountType === 'human' ? details.last_name : 'ENTITY',
-                entity_name: accountType === 'entity' ? details.entity_name : undefined,
-                email: details.email,
-                role: details.role,
-                account_type: accountType
-            };
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
 
-            const createResponse = await fetch('/api/users/create', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
+    if (accountType === 'human') {
+      if (!details.first_name.trim()) {
+        newErrors.first_name = 'First name is required';
+      }
+      if (!details.last_name.trim()) {
+        newErrors.last_name = 'Last name is required';
+      }
+    } else {
+      if (!details.entity_name.trim()) {
+        newErrors.entity_name = 'Entity name is required';
+      }
+    }
 
-            if (!createResponse.ok) {
-                throw new Error('Failed to create profile');
-            }
+    if (!details.email.trim()) {
+      newErrors.email = 'Email is required';
+    } else if (!/\S+@\S+\.\S+/.test(details.email)) {
+      newErrors.email = 'Email is invalid';
+    }
 
-            const data = await createResponse.json();
-            onComplete(data.user);
-        } catch (error) {
-            console.error('Registration error:', error);
-            setError(error instanceof Error ? error.message : 'Failed to create account');
-        } finally {
-            setLoading(false);
-        }
-    };
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
-    return (
-        <Card className={`w-full max-w-md p-6 backdrop-blur-lg bg-white/10 ${customStyles.card || ''}`}>
-            <div className="absolute bottom-2 right-2 w-24 h-10 opacity-50">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 80" className="text-white">
-                    <path d="M20 15h160v50H20z" fill="none" stroke="currentColor" strokeWidth="2" />
-                    <text x="100" y="45" textAnchor="middle" fill="currentColor"
-                        className="text-sm font-bold">CAPLIB</text>
-                </svg>
-            </div>
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
 
-            <div className="text-center mb-6">
-                <h1 className={`text-3xl font-bold bg-gradient-to-r from-${theme.primary}-400 to-${theme.secondary}-400 bg-clip-text text-transparent`}>
-                    Complete Your Profile
-                </h1>
-                <p className="text-white/70 mt-2">
-                    Tell us a bit about yourself
-                </p>
-            </div>
+    setLoading(true);
 
-            {error && (
-                <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="mb-6 p-4 bg-red-500/10 rounded-lg"
-                >
-                    <p className="text-sm text-red-400 text-center">{error}</p>
-                </motion.div>
+    try {
+      // Create different payload based on account type
+      const payload = {
+        wallet_address: walletAddress,
+        first_name: accountType === 'human' ? details.first_name : '',
+        last_name: accountType === 'human' ? details.last_name : 'ENTITY',
+        entity_name: accountType === 'entity' ? details.entity_name : '',
+        email: details.email,
+        role: details.role,
+        account_type: accountType,
+      };
+
+      const createResponse = await fetch('/api/users/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!createResponse.ok) {
+        throw new Error('Failed to create profile');
+      }
+
+      const data = await createResponse.json();
+      onComplete(data.user);
+      
+      toast({
+        title: 'Profile created',
+        description: 'Your profile has been successfully created.',
+        status: 'success',
+        duration: 5000,
+        isClosable: true,
+      });
+    } catch (error) {
+      console.error('Registration error:', error);
+      
+      toast({
+        title: 'Registration failed',
+        description: error instanceof Error ? error.message : 'Failed to create account',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Box width="100%" p={6} position="relative">
+      <VStack spacing={6} align="stretch">
+        <Box textAlign="center" mb={6}>
+          <Heading
+            as="h1"
+            size="xl"
+            bgGradient={`linear(to-r, ${theme.primary}.400, ${theme.secondary}.400)`}
+            backgroundClip="text"
+            mb={2}
+          >
+            Complete Your Profile
+          </Heading>
+          <Text color="whiteAlpha.700">Tell us a bit about yourself</Text>
+        </Box>
+
+        <form onSubmit={handleSubmit}>
+          <VStack spacing={6} align="stretch">
+            <FormControl as="fieldset">
+              <FormLabel as="legend" fontWeight="medium">
+                Account Type
+              </FormLabel>
+              <RadioGroup 
+                defaultValue="human" 
+                onChange={(value: string) => setAccountType(value as AccountType)}
+                value={accountType}
+              >
+                <Stack direction="row" spacing={5}>
+                  <Radio value="human">Individual</Radio>
+                  <Radio value="entity">Entity/Organization</Radio>
+                </Stack>
+              </RadioGroup>
+            </FormControl>
+
+            {accountType === 'human' ? (
+              <Stack direction={{ base: 'column', md: 'row' }} spacing={4}>
+                <FormControl isInvalid={!!errors.first_name}>
+                  <FormLabel>First Name</FormLabel>
+                  <Input
+                    value={details.first_name}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleDetailsChange('first_name', e.target.value)}
+                    placeholder="John"
+                  />
+                  <FormErrorMessage>{errors.first_name}</FormErrorMessage>
+                </FormControl>
+
+                <FormControl isInvalid={!!errors.last_name}>
+                  <FormLabel>Last Name</FormLabel>
+                  <Input
+                    value={details.last_name}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleDetailsChange('last_name', e.target.value)}
+                    placeholder="Doe"
+                  />
+                  <FormErrorMessage>{errors.last_name}</FormErrorMessage>
+                </FormControl>
+              </Stack>
+            ) : (
+              <FormControl isInvalid={!!errors.entity_name}>
+                <FormLabel>Organization Name</FormLabel>
+                <Input
+                  value={details.entity_name}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleDetailsChange('entity_name', e.target.value)}
+                  placeholder="Company or Organization Name"
+                />
+                <FormErrorMessage>{errors.entity_name}</FormErrorMessage>
+              </FormControl>
             )}
 
-            <Tabs defaultTab="human" onChange={(value) => setAccountType(value as AccountType)}>
-                <TabsHeader>
-                    <Tab id="human">Human</Tab>
-                    <Tab id="entity">Entity</Tab>
-                </TabsHeader>
+            <FormControl isInvalid={!!errors.email}>
+              <FormLabel>Email</FormLabel>
+              <Input
+                type="email"
+                value={details.email}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleDetailsChange('email', e.target.value)}
+                placeholder="you@example.com"
+              />
+              <FormErrorMessage>{errors.email}</FormErrorMessage>
+            </FormControl>
 
-                <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-                    <TabsContent>
-                        <TabPanel id="human">
-                            <div className="space-y-4">
-                                <div>
-                                    <Label htmlFor="firstName">First Name</Label>
-                                    <Input
-                                        id="firstName"
-                                        value={details.first_name}
-                                        onChange={(e) => handleDetailsChange('first_name', e.target.value)}
-                                        className={`bg-white/5 border-white/10 text-white ${customStyles.input}`}
-                                        placeholder="John"
-                                    />
-                                </div>
+            <FormControl>
+              <FormLabel>Role</FormLabel>
+              <Select
+                value={details.role}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleDetailsChange('role', e.target.value)}
+              >
+                <option value="User">User</option>
+                <option value="Administrator">Administrator</option>
+                <option value="Developer">Developer</option>
+              </Select>
+            </FormControl>
 
-                                <div>
-                                    <Label htmlFor="lastName">Last Name</Label>
-                                    <Input
-                                        id="lastName"
-                                        value={details.last_name}
-                                        onChange={(e) => handleDetailsChange('last_name', e.target.value)}
-                                        className={`bg-white/5 border-white/10 text-white ${customStyles.input}`}
-                                        placeholder="Doe"
-                                    />
-                                </div>
-                            </div>
-                        </TabPanel>
-
-                        <TabPanel id="entity">
-                            <div>
-                                <Label htmlFor="entityName">Entity Name</Label>
-                                <Input
-                                    id="entityName"
-                                    value={details.entity_name}
-                                    onChange={(e) => handleDetailsChange('entity_name', e.target.value)}
-                                    className={`bg-white/5 border-white/10 text-white ${customStyles.input}`}
-                                    placeholder="Company or Organization Name"
-                                />
-                            </div>
-                        </TabPanel>
-                    </TabsContent>
-
-                    <div>
-                        <Label htmlFor="email">Email</Label>
-                        <Input
-                            id="email"
-                            type="email"
-                            value={details.email}
-                            onChange={(e) => handleDetailsChange('email', e.target.value)}
-                            className={`bg-white/5 border-white/10 text-white ${customStyles.input}`}
-                            placeholder="you@example.com"
-                        />
-                    </div>
-
-                    <div>
-                        <Label htmlFor="role">Role</Label>
-                        <Select
-                            id="role"
-                            value={details.role}
-                            onChange={(e) => handleDetailsChange('role', e.target.value)}
-                            className={customStyles.select}
-                        >
-                            <Option value="User">User</Option>
-                            <Option value="Administrator">Administrator</Option>
-                            <Option value="Developer">Developer</Option>
-                        </Select>
-                    </div>
-
-                    <div className="flex gap-3 pt-2">
-                        <Button
-                            type="button"
-                            onClick={onBack}
-                            className="flex-1 border border-white/10 hover:bg-white/5 text-white"
-                            disabled={loading}
-                        >
-                            Back
-                        </Button>
-                        <Button
-                            type="submit"
-                            className={`flex-1 bg-gradient-to-r from-${theme.primary}-500 to-${theme.secondary}-500 text-white ${customStyles.button}`}
-                            disabled={loading}
-                        >
-                            {loading ? "Please wait..." : "Complete"}
-                        </Button>
-                    </div>
-                </form>
-            </Tabs>
-        </Card>
-    );
+            <Flex gap={3} pt={4}>
+              <Button
+                flex="1"
+                variant="outline"
+                onClick={onBack}
+                isDisabled={loading}
+              >
+                Back
+              </Button>
+              <Button
+                flex="1"
+                variant="gradient"
+                type="submit"
+                isLoading={loading}
+                loadingText="Creating..."
+              >
+                Complete
+              </Button>
+            </Flex>
+          </VStack>
+        </form>
+      </VStack>
+    </Box>
+  );
 }

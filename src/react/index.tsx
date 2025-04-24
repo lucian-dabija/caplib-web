@@ -13,3 +13,4 @@ export {
 } from './components/OnboardingForm';
 
 export * from './utils';
+export { default as capAuthTheme } from './theme';

@@ -6,11 +6,11 @@ A modern, secure, and easy-to-use credentialless authentication library for web 
 
 ## Features At a Glance
 
-- 🎨 **Beautiful Modal UI**: Clean design with smooth animations
+- 🎨 **Beautiful Modal UI**: Clean design with smooth animations and integrated Chakra UI
 - 🔐 **Secure Authentication**: QR code-based blockchain authentication
 - 🔒 **Encrypted Storage**: Built-in encrypted JSON database
 - 📱 **Mobile Ready**: Optional mobile wallet integration
-- 🔄 **Simple Onboarding**: Quick user registration flow
+- 🔄 **Simple Onboarding**: Intuitive user registration with account type selection
 - ⚡ **Zero Config**: No manual route setup needed
 - 🎯 **Simple Integration**: Just wrap your components
 - 🌐 **Framework Agnostic**: Works with React, Vue, and more
@@ -176,28 +176,29 @@ function handleAuth(authenticatedUser) {
 ### How It Works
 
 1. User visits a protected page
-2. Auth modal automatically appears
+2. Auth modal automatically appears with step indicator
 3. User scans QR code with their wallet app
 4. User approves the authentication transaction
 5. Library verifies the transaction with the API
-6. If new user, shows onboarding form with Human/Entity selection
+6. If new user, shows onboarding form with Individual/Entity selection
 7. User is authenticated and can access protected content
 
 ### The Modal UI
 
 The authentication modal includes:
-- Clean, modern design
-- Smooth transitions
+- Clean, modern Chakra UI components
+- Progress stepper for visual guidance
+- Smooth transitions with Framer Motion
 - QR code display
 - Mobile wallet deep linking (optional)
 - Loading states
-- Error handling
+- Error handling with toast notifications
 
 ### User Account Types
 
 The library supports two types of accounts:
-- **Human**: Individuals with first and last name
-- **Entity**: Organizations with entity name (stored with last name as "ENTITY")
+- **Individual**: Persons with first and last name
+- **Entity/Organization**: Companies with entity name
 
 ## Customization Options
 
@@ -208,15 +209,8 @@ The library supports two types of accounts:
   config={{
     // Theme colors
     theme: {
-      primary: "indigo",    // Any Tailwind color
-      secondary: "purple"   // Any Tailwind color
-    },
-    
-    // Custom class names
-    customStyles: {
-      card: "backdrop-blur-xl bg-white/10",
-      button: "hover:scale-105",
-      input: "focus:ring-2"
+      primary: "indigo",    // Any Chakra UI color
+      secondary: "purple"   // Any Chakra UI color
     }
   }}
 >
@@ -231,6 +225,33 @@ The library supports two types of accounts:
     mobileWalletScheme: "zerowallet://"
   }}
 >
+```
+
+### Using the Built-in Chakra Theme
+
+For advanced customization, you can access and extend the built-in theme:
+
+```typescript
+import { capAuthTheme } from 'caplib/react';
+import { extendTheme, ChakraProvider } from '@chakra-ui/react';
+
+// Extend the theme with your customizations
+const myTheme = extendTheme({
+  colors: {
+    brand: {
+      // Your custom brand colors
+    }
+  }
+}, capAuthTheme);
+
+// Use in your app
+function MyApp({ Component, pageProps }) {
+  return (
+    <ChakraProvider theme={myTheme}>
+      <Component {...pageProps} />
+    </ChakraProvider>
+  );
+}
 ```
 
 ### Custom Validation
@@ -249,10 +270,11 @@ export const { GET, POST } = createAuthHandler({
 
 ### React/Next.js Components
 
-- `AuthProvider`: Main provider component
+- `AuthProvider`: Main provider component with Chakra UI integration
 - `useAuth`: Hook for accessing auth context
 - `withAuth`: HOC for protecting components
 - `CapAuth`: Standalone auth component
+- `capAuthTheme`: Pre-configured Chakra UI theme
 
 ### Vue Components
 
@@ -266,6 +288,7 @@ export const { GET, POST } = createAuthHandler({
 ### Types
 
 - `User`: User data model
+- `NewUserData`: New user registration data type
 - `CapAuthConfig`: Configuration options
 - `AuthResponse`: API response type
 
