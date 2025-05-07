@@ -32,7 +32,7 @@ import type { CapAuthProps, User } from '../../types';
 import { OnboardingForm } from './OnboardingForm';
 
 
-const ZeroCatLogo = require('../../../zerocat.png');
+const ZeroCatLogo = require('../../zerocat.png');
 
 const fadeIn = {
     hidden: { opacity: 0 },

@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import type { AuthHandlerConfig, AuthResponse, NonceResponse } from '../../types';
 import { EncryptedJSONDatabase } from '../db/encrypted-json-db';
+import { isValidRole, getDefaultRole } from '../utils/roles';
 
 const getEnvVariable = (name: string, fallbackName?: string): string => {
     let value = process.env[name];
@@ -130,6 +131,10 @@ export const createAuthHandler = (config?: AuthHandlerConfig) => {
             try {
                 let user = await db.findUser(userAddress);
 
+                if (userData?.role && !isValidRole(userData.role)) {
+                    userData.role = getDefaultRole();
+                  }
+                  
                 if (!user && userData) {
                     user = await db.createUser({
                         wallet_address: userAddress,

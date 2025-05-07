@@ -55,6 +55,10 @@ NEXT_PUBLIC_AUTH_CONTRACT_ID=your_contract_id
 
 # Database Encryption (Generate with: openssl rand -hex 32)
 DB_ENCRYPTION_KEY=your_random_32_byte_hex_string
+
+# User Roles Configuration (comma-separated)
+USER_ROLES=User,Administrator
+DEFAULT_USER_ROLE=User
 ```
 
 ### Next.js Implementation
@@ -79,7 +83,39 @@ DB_ENCRYPTION_KEY=your_random_32_byte_hex_string
    });
    ```
 
-2. **Add the Provider to Your Layout**
+2. **Create an API Roles Route**
+   Create app/api/roles/route.ts (for App Router) or pages/api/roles.ts (for Pages Router):
+
+   ```typescript
+     // app/api/roles/route.ts (App Router)
+  import { NextRequest, NextResponse } from 'next/server';
+  import { getAvailableRoles, getDefaultRole } from 'caplib/server';
+  
+  export async function GET(_req: NextRequest) {
+    try {
+      // Get roles from environment variables
+      const roles = getAvailableRoles();
+      const defaultRole = getDefaultRole();
+      
+      return NextResponse.json({
+        roles,
+        defaultRole
+      });
+    } catch (error) {
+      console.error('Error fetching roles:', error);
+      return NextResponse.json(
+        { 
+          error: 'Failed to fetch roles',
+          roles: ['User', 'Administrator'],
+          defaultRole: 'User'
+        },
+        { status: 500 }
+      );
+    }
+  }
+   ```
+
+3. **Add the Provider to Your Layout**
 
    In your `app/layout.tsx` (App Router) or `pages/_app.tsx` (Pages Router):
 
@@ -116,7 +152,7 @@ DB_ENCRYPTION_KEY=your_random_32_byte_hex_string
    }
    ```
 
-3. **Create a User API Route** (for storing profile information)
+4. **Create a User API Route** (for storing profile information)
 
    Create `app/api/users/create/route.ts` (App Router) or `pages/api/users/create.ts` (Pages Router):
 
@@ -143,7 +179,7 @@ DB_ENCRYPTION_KEY=your_random_32_byte_hex_string
    }
    ```
 
-4. **Protect Your Pages**
+5. **Protect Your Pages**
 
    ```typescript
    'use client'; // For Next.js App Router
@@ -374,6 +410,19 @@ For standard React apps, you'll need to handle API routes separately using your 
 
 ## Customization Options
 
+### User Roles Configuration
+
+You can customize available user roles through environment variables:
+
+```env
+# Define available roles (comma-separated)
+USER_ROLES=User,Administrator,Developer,Moderator,Guest
+
+# Set the default role for new users
+DEFAULT_USER_ROLE=User
+```
+The roles defined here will be available in the registration form dropdown and used for role validation throughout the application.
+
 ### Styling
 
 ```typescript
@@ -444,6 +493,12 @@ For standard React apps, you'll need to handle API routes separately using your 
 - **`createAuthHandler`**: Creates API route handlers
 - **`EncryptedJSONDatabase`**: Database implementation
 - **`db`**: Pre-configured database instance
+
+### Server Utilities
+
+- **`getAvailableRoles`**: Gets user roles from environment variables
+- **`getDefaultRole`**: Gets the default user role 
+- **`isValidRole`**: Validates if a role exists in available roles
 
 ### Vue Components
 
