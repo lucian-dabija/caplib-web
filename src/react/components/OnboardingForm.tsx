@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Box,
     Button,
@@ -15,8 +15,13 @@ import {
     VStack,
     useToast,
     FormErrorMessage,
+    Image,
 } from '@chakra-ui/react';
 import type { User, UserDetails } from '../../types';
+
+// Import the logo directly
+// This will be bundled with the library during build
+const ZerocatLogo = require('../../zerocat.png');
 
 interface OnboardingFormProps {
     walletAddress: string;
@@ -47,6 +52,8 @@ export function OnboardingForm({
     const [loading, setLoading] = useState(false);
     const [accountType, setAccountType] = useState<AccountType>('human');
     const [errors, setErrors] = useState<Record<string, string>>({});
+    const [availableRoles, setAvailableRoles] = useState<string[]>(['User']);
+    const [defaultRole, setDefaultRole] = useState<string>('User');
 
     const [details, setDetails] = useState<UserDetails>({
         first_name: '',
@@ -55,6 +62,34 @@ export function OnboardingForm({
         email: '',
         role: 'User',
     });
+
+    // Fetch available roles from the API
+    useEffect(() => {
+        const fetchRoles = async () => {
+            try {
+                const response = await fetch('/api/roles');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.roles && Array.isArray(data.roles) && data.roles.length > 0) {
+                        setAvailableRoles(data.roles);
+                        
+                        if (data.defaultRole) {
+                            setDefaultRole(data.defaultRole);
+                            setDetails(prev => ({
+                                ...prev,
+                                role: data.defaultRole
+                            }));
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to fetch roles:', error);
+                // Fall back to hardcoded roles
+            }
+        };
+
+        fetchRoles();
+    }, []);
 
     const handleDetailsChange = <K extends keyof UserDetails>(
         key: K,
@@ -159,6 +194,15 @@ export function OnboardingForm({
         <Box width="100%" p={6} position="relative">
             <VStack spacing={6} align="stretch">
                 <Box textAlign="center" mb={6}>
+                    <Flex justifyContent="center" mb={4}>
+                        <Image 
+                            src={ZerocatLogo} 
+                            alt="ZEROCAT" 
+                            height="32px"
+                            width="80px"
+                            objectFit="contain"
+                        />
+                    </Flex>
                     <Heading
                         as="h1"
                         size="xl"
@@ -240,9 +284,9 @@ export function OnboardingForm({
                                 value={details.role}
                                 onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleDetailsChange('role', e.target.value)}
                             >
-                                <option value="User">User</option>
-                                <option value="Administrator">Administrator</option>
-                                <option value="Developer">Developer</option>
+                                {availableRoles.map(role => (
+                                    <option key={role} value={role}>{role}</option>
+                                ))}
                             </Select>
                         </FormControl>
 
@@ -268,6 +312,28 @@ export function OnboardingForm({
                     </VStack>
                 </form>
             </VStack>
+            
+            {/* Footer with ZEROCAT branding */}
+            <Flex 
+                justifyContent="center" 
+                alignItems="center" 
+                position="absolute"
+                bottom="0"
+                left="0"
+                right="0"
+                p={2}
+                borderTop="1px"
+                borderColor="whiteAlpha.100"
+                bg="whiteAlpha.50"
+            >
+                <Text fontSize="xs" color="whiteAlpha.600" mr={1}>Powered by</Text>
+                <Image
+                    src={ZerocatLogo}
+                    alt="ZEROCAT"
+                    height="12px"
+                    width="28px"
+                />
+            </Flex>
         </Box>
     );
 }
