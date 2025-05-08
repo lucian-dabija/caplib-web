@@ -1,6 +1,6 @@
 {
     "name": "caplib",
-    "version": "0.1.11",
+    "version": "0.1.12",
     "author": "ZEROCAT",
     "license": "BSD-3-Clause",
     "description": "Credentialless Authentication Protocol Library for Web Applications",
