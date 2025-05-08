@@ -5,6 +5,7 @@ export default defineConfig({
         'src/index.ts',
         'src/react/index.tsx',
         'src/server/index.ts',
+        'src/server/utils/roles.ts',
         'src/vue/index.ts',
     ],
     format: ['cjs', 'esm'],
