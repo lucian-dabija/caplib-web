@@ -58,6 +58,7 @@ export interface CapAuthConfig {
     encryptionKey?: string;
     enableMobileWallet?: boolean;
     mobileWalletScheme?: string;
+    debug?: boolean; // Added debug option
 }
 
 export interface AuthHandlerConfig {

@@ -6,22 +6,25 @@
     "description": "Credentialless Authentication Protocol Library for Web Applications",
     "main": "dist/index.js",
     "module": "dist/index.mjs",
-    "types": "./dist/index.d.ts",
+    "types": "dist/index.d.ts",
+    "typings": "dist/index.d.ts",
     "scripts": {
-        "build": "tsup",
+        "build": "tsup && npm run copy-assets",
         "dev": "tsup --watch",
         "clean": "rimraf ./dist",
         "typecheck": "tsc --noEmit",
         "build:full": "npm run clean && npm run build",
         "prepublishOnly": "npm run build:full",
+        "copy-assets": "mkdir -p dist/react/assets && cp -r src/react/assets/* dist/react/assets/",
         "postinstall": "node scripts/postinstall.js"
     },
     "files": [
         "dist",
         "scripts",
         "README.md",
+        "index.d.ts",
         "LICENSE",
-        "zerocat.png"
+        "src/react/assets/zerocat.png"
     ],
     "exports": {
         ".": {
@@ -83,10 +86,12 @@
     },
     "devDependencies": {
         "@types/crypto-js": "^4.2.1",
+        "@types/fs-extra": "^11.0.4",
         "@types/node": "^20.10.0",
         "@types/react": "^18.3.20",
         "@types/react-dom": "^18.2.0",
         "@types/vue": "^1.0.31",
+        "fs-extra": "^11.3.0",
         "rimraf": "^5.0.0",
         "tsup": "^8.0.0",
         "typescript": "^5.0.0"
