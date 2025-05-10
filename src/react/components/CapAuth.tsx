@@ -30,9 +30,7 @@ import {
 import { PhoneIcon, CheckIcon, CloseIcon, RepeatIcon } from '@chakra-ui/icons';
 import type { CapAuthProps, User } from '../../types';
 import { OnboardingForm } from './OnboardingForm';
-
-
-const ZeroCatLogo = require('../../zerocat.png');
+import ZeroCatLogo from '../assets/zerocat-logo';
 
 const fadeIn = {
     hidden: { opacity: 0 },

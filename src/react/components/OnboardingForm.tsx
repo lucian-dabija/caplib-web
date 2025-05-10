@@ -21,7 +21,7 @@ import type { User, UserDetails } from '../../types';
 
 // Import the logo directly
 // This will be bundled with the library during build
-const ZerocatLogo = require('../../zerocat.png');
+import ZeroCatLogo from '../assets/zerocat-logo';
 
 interface OnboardingFormProps {
     walletAddress: string;
@@ -196,7 +196,7 @@ export function OnboardingForm({
                 <Box textAlign="center" mb={6}>
                     <Flex justifyContent="center" mb={4}>
                         <Image 
-                            src={ZerocatLogo} 
+                            src={ZeroCatLogo} 
                             alt="ZEROCAT" 
                             height="32px"
                             width="80px"
@@ -328,7 +328,7 @@ export function OnboardingForm({
             >
                 <Text fontSize="xs" color="whiteAlpha.600" mr={1}>Powered by</Text>
                 <Image
-                    src={ZerocatLogo}
+                    src={ZeroCatLogo}
                     alt="ZEROCAT"
                     height="12px"
                     width="28px"
